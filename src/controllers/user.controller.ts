@@ -23,11 +23,13 @@ export const getUserCtrl = async (request: Request, response: Response) => {
             message: "Usuario no encontrado",
         });
     }
+
     if (sessionUser.userId !== user.id) {
         return response.status(401).json({
             message: "Acceso denegado",
         });
     }
+
     return response.status(200).json({
         user,
     });

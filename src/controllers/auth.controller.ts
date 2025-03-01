@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 const jwtSecret = process.env.JWT_SECRET as string;
+
 export const registerCtrl = async (request: Request, response: Response) => {
   const { username, email, password, age } = request.body;
 
@@ -50,7 +51,10 @@ export const loginCtrl = async (request: Request, response: Response) => {
         message: "Usuario o contraseña incorrectos",
       });
     }
-    const token = jwt.sign({userId: id, email},jwtSecret, {
+    const token = jwt.sign({
+      userId: id,
+      email
+    },jwtSecret, {
       expiresIn: '1h'
     });
     return response.status(200).json({
