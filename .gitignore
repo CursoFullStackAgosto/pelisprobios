@@ -216,3 +216,10 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/node,linux,windows,macos
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mpeg
