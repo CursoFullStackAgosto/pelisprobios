@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path = require("path");
-import { PrismaClient } from "@prisma/client";
+import { Movie, PrismaClient } from "@prisma/client";
 import os from "os";
 import { getDirectoryStats } from "../utils/get-directory-stats";
 import { VIDEO_EXTENSIONS } from "../constants/global.constants";
-import { fetchDraftListMovies } from "../services/fetch-imdb";
+import { fetchMovieDetails } from "../services/fetch-imdb";
+import { MovieDetails } from "../entities/global.entities";
 
 const basePath = path.join(__dirname,"..","..","movies");
 interface AuthenticatedRequest extends Request {
@@ -28,10 +29,14 @@ const resolvePath = (inputPath: string) => {
   return path.resolve(process.cwd(), inputPath);
 }
 
-const scanDirectoryForMovies = async(directoryPath: string) => {
-  const resultScan: any = [];
+interface MovieWithDetails extends Movie {
+  additionalDetails?: MovieDetails | null;
+}
+
+const scanDirectoryForMovies = async(directoryPath: string, userId: number): Promise<any> => {
+  const foundMovies: MovieWithDetails[] = [];
+
   const processItem = async(itemPath: string): Promise<void> =>{
-    console.log(`Procesando ${itemPath}`);
     try {
       const stats = fs.statSync(itemPath);
       if (stats.isDirectory()) {
@@ -43,12 +48,46 @@ const scanDirectoryForMovies = async(directoryPath: string) => {
         const ext = path.extname(itemPath).toLowerCase();
         if (VIDEO_EXTENSIONS.includes(ext)) {
           const title = path.basename(itemPath, ext);
-          const draftListMovies = await fetchDraftListMovies(title);
-          
-          resultScan.push({
-            title,
-            draftListMovies
+
+          const existingMovie = await prisma.movie.findFirst({
+            where: {
+              userId,
+              filePath: itemPath
+            }
           })
+
+          if (!existingMovie) {
+            try {
+              const movieDetails = await fetchMovieDetails(title);
+
+              const movie = await prisma.movie.create({
+                data: {
+                  title: movieDetails?.Title ?? title,
+                  filePath: itemPath,
+                  userId,
+                  description: movieDetails?.Plot ?? 'No se encontró descripción'
+                }
+              })
+
+              foundMovies.push({
+                ...movie,
+                additionalDetails: movieDetails
+              })
+
+            } catch (error) {
+              console.error(`Error al procesar la película ${title}:`, error);
+
+              const movie = await prisma.movie.create({
+                data: {
+                  title,
+                  filePath: itemPath,
+                  userId,
+                }
+              })
+
+              foundMovies.push(movie);
+            }
+          }
         }
       }
     } catch (error) {
@@ -57,14 +96,14 @@ const scanDirectoryForMovies = async(directoryPath: string) => {
   }
 
   await processItem(directoryPath);
-  return resultScan;
+  return foundMovies;
 }
 
 
 export const scanDirectoryCtrl = async (request: Request, response: Response) => {
   try {
     const { directoryPath } = request.body;
-    console.log("Ruta del directorio proporcionada:", directoryPath);
+
     const userId  = request.body.user?.userId;
 
     if (!userId) {
@@ -88,16 +127,14 @@ export const scanDirectoryCtrl = async (request: Request, response: Response) =>
     }
 
     const stats = fs.statSync(finalDirectoryPath);
-    console.log("Stats del directorio:", stats.isDirectory());
+
     if (!stats.isDirectory()) {
       return response.status(400).json({
         message: "La ruta proporcionada no es un directorio válido",
       });
     }
 
-    const resultScan = await scanDirectoryForMovies(finalDirectoryPath);
-
-    console.log("resultScan", resultScan);
+    const resultScan = await scanDirectoryForMovies(finalDirectoryPath, userId);
 
     return response.status(200).json({
       message: "Directorio escaneado correctamente",
@@ -218,8 +255,6 @@ export const listHomeFoldersCtrl = async (request: AuthenticatedRequest, respons
     }
 
     const homeDir = os.homedir();
-
-    console.log("homeDir", homeDir);
 
     const foldersToFind = ["Downloads", "Videos", "Download", "Video", "Descargas", "Vídeos"];
 
