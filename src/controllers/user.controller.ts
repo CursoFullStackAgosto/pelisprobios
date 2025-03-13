@@ -16,6 +16,14 @@ export const getUserCtrl = async (request: Request, response: Response) => {
             username: true,
             email: true,
             age: true,
+            movies: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    filePath: true
+                }
+            }
         },
     });
     if (!user) {

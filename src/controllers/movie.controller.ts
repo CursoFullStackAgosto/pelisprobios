@@ -219,7 +219,92 @@ export const getMoviesCtrl = async (request: AuthenticatedRequest, response: Res
   })
 }
 
+export const getMovieCtrl = async (request: AuthenticatedRequest, response: Response) => {
+  const { movieId } = request.params;
+  const userId = request.body.user?.userId;
+  if (!userId) {
+    return response.status(401).json({
+      message: "Usuario no autenticado",
+    });
+  }
+  if(!movieId) {
+    return response.status(400).json({
+      message: "ID de película no proporcionado",
+    });
+  }
+  const movie = await prisma.movie.findFirst({
+    where: {
+      id: parseInt(movieId),
+      userId
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      filePath: true
+    }
+  })
+  if(!movie) {
+    return response.status(404).json({
+      message: "Película no encontrada",
+    })
+  }
+  return response.status(200).json({
+    message: "Película encontrada",
+    data: movie
+  })
+}
 
+export const updateMovieCtrl = async (request: AuthenticatedRequest, response: Response) => {
+  const { movieId } = request.params;
+  const userId = request.body.user?.userId;
+  const { title, description, filePath } = request.body;
+  if (!userId) {
+    return response.status(401).json({
+      message: "Usuario no autenticado",
+    });
+  }
+  if(!movieId) {
+    return response.status(400).json({
+      message: "ID de película no proporcionado",
+    });
+  }
+  const existingMovie = await prisma.movie.findFirst({
+    where: {
+      id: parseInt(movieId),
+      userId
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      filePath: true
+    }
+  })
+  if(!existingMovie){
+    return response.status(404).json({
+      message: "Película no encontrada",
+    })
+  }
+const updatedMovie = await prisma.movie.update({
+  where: {
+    id: parseInt(movieId),
+    userId,
+  },
+  data: {
+    title: title ?? existingMovie.title,
+    description: description ?? existingMovie.description,
+    filePath: filePath ?? existingMovie.filePath
+  }
+})
+
+return response.status(200).json({
+  message: "Pelicula actualizada correctamente",
+  data: {
+    updatedMovie
+  }
+})
+}
 export const deleteMovieCtrl = async (request: AuthenticatedRequest, response: Response) => {
   const { movieId } = request.params;
   const userId = request.body.user?.userId;
@@ -320,5 +405,5 @@ export const listHomeFoldersCtrl = async (request: AuthenticatedRequest, respons
     })
 
   }
-  
+
 }

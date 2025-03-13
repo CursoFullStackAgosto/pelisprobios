@@ -27,7 +27,7 @@ export const fetchDraftListMovies = async(title: string): Promise<MovieDraftResp
 export const fetchMovieDetails = async(title: string): Promise<MovieDetails | null> => {
   try {
     const response = await omdbApi.get(`/?${PARAM_MOVIE_DETAILS_BY_TITLE}=${title}&${API_KEY_PARAM}`)
-    
+
     return response.data;
   } catch (error) {
     console.error("Error al obtener los detalles de la película:", error);
