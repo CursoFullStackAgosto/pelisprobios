@@ -19,7 +19,7 @@ const colors = {
 
 const level = () => {
   const env = process.env.NODE_ENV ?? 'development';
-  const isDevelopment = env === 'development';
+  const isDevelopment = env === 'development' || process.env.DEBUG === 'true';
   return isDevelopment ? 'debug' : 'warn';
 }
 

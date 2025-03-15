@@ -68,3 +68,37 @@ export const loginCtrl = async (request: Request, response: Response) => {
     });
   }
 };
+
+export const setupTwoFactorAuthCtrl = async(request: Request, response: Response) => {
+  try {
+    const user = request.body.user;
+    if (!user || !user.userId) {
+      return response.status(401).json({
+        message: "Usuario no autenticado",
+      })
+    }
+
+    const userId = user.userId;
+    const { token } = request.body;
+
+    const userDetails = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!userDetails) {
+      return response.status(404).json({
+        message: "Usuario no encontrado",
+      });
+    }
+
+    if (userDetails.twoFactorEnabled && userDetails.twoFactorSecret) {
+      return response.status(400).json({
+        message: "La autenticación de dos factores ya está configurada",
+      });
+    }
+  } catch (error) {
+    return response.status(500).json({
+      message: "Error al configurar la autenticación de dos factores",
+    })
+  }
+}
