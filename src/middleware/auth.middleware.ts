@@ -1,18 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { ApiError } from './error.middleware';
 
 const jwtSecret = process.env.JWT_SECRET as string;
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    res.status(401).json({ message: "Acceso denegado" });
+    next(new ApiError(401, 'Acceso denegado: No se proporcionó token de autenticación'));
     return;
   }
 
   const token = authHeader.split(" ")[1];
   if (!token) {
-    res.status(401).json({ message: "Acceso denegado" });
+    next(new ApiError(401, 'Acceso denegado: No se proporcionó token de autenticación'));
     return;
   }
 
@@ -21,7 +22,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction): vo
     req.body.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ message: "Acceso denegado" });
+    next(new ApiError(401, 'Acceso denegado: El token expiro o es inválido'))
     return;
   }
 };

@@ -1,11 +1,12 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { ApiError } from '../middleware/error.middleware';
 const prisma = new PrismaClient();
 const jwtSecret = process.env.JWT_SECRET as string;
 
-export const registerCtrl = async (request: Request, response: Response) => {
+export const registerCtrl = async (request: Request, response: Response, next: NextFunction) => {
   const { username, email, password, age } = request.body;
 
   try {
@@ -24,14 +25,11 @@ export const registerCtrl = async (request: Request, response: Response) => {
       message: "Usuario registrado correctamente",
     });
   } catch (error) {
-    console.error(error);
-    return response.status(500).json({
-      message: "Error al registrar el usuario",
-    });
+    next(new ApiError(500, 'Error al registrar el usuario'))
   }
 };
 
-export const loginCtrl = async (request: Request, response: Response) => {
+export const loginCtrl = async (request: Request, response: Response, next: NextFunction) => {
   const { email, password } = request.body;
   try {
     const user = await prisma.user.findUnique({
@@ -62,14 +60,11 @@ export const loginCtrl = async (request: Request, response: Response) => {
       message: "Inicio de sesión correcto",
     });
   } catch (error) {
-    console.error(error);
-    return response.status(500).json({
-      message: "Error al iniciar sesión",
-    });
+    next(new ApiError(500, 'Error al iniciar sesión'));
   }
 };
 
-export const setupTwoFactorAuthCtrl = async(request: Request, response: Response) => {
+export const setupTwoFactorAuthCtrl = async(request: Request, response: Response, next: NextFunction) => {
   try {
     const user = request.body.user;
     if (!user || !user.userId) {
@@ -97,8 +92,6 @@ export const setupTwoFactorAuthCtrl = async(request: Request, response: Response
       });
     }
   } catch (error) {
-    return response.status(500).json({
-      message: "Error al configurar la autenticación de dos factores",
-    })
+    next(new ApiError(500, 'Error al configurar la autenticación de dos factores'))
   }
 }

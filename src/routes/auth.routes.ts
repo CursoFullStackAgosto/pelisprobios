@@ -4,16 +4,16 @@ import { request } from "http";
 
 const authRoutes = Router();
 
-authRoutes.post('/register', async (request, response) => {
-  await registerCtrl(request, response);
+authRoutes.post('/register', async (request, response, next) => {
+  await registerCtrl(request, response, next);
 });
 
-authRoutes.post('/login', async (request, response) => {
-  await loginCtrl(request, response);
+authRoutes.post('/login', async (request, response, next) => {
+  await loginCtrl(request, response, next);
 });
 
-authRoutes.post('/setup-2fa', async (request, response) => {
-  await setupTwoFactorAuthCtrl(request, response);
+authRoutes.post('/setup-2fa', async (request, response, next) => {
+  await setupTwoFactorAuthCtrl(request, response, next);
 });
 
 export default authRoutes;
