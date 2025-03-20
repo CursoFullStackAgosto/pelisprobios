@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { ApiError } from '../middleware/error.middleware';
+import speakeasy from 'speakeasy';
+
 const prisma = new PrismaClient();
 const jwtSecret = process.env.JWT_SECRET as string;
 
@@ -91,6 +93,24 @@ export const setupTwoFactorAuthCtrl = async(request: Request, response: Response
         message: "La autenticación de dos factores ya está configurada",
       });
     }
+
+
+    const secret = speakeasy.generateSecret({
+      name: `PelisProBios:${userDetails.email}`
+    });
+
+    await prisma.user.update({
+      where: { id: userId},
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: secret.base32
+      }
+    })
+
+    return response.status(201).json({
+      message: "Configuración de autenticación de dos factores iniciada",
+      secret: secret.base32,
+    })
   } catch (error) {
     next(new ApiError(500, 'Error al configurar la autenticación de dos factores'))
   }

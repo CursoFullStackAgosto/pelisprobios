@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
-import moviesRoutes from './movies.routes';
+import moviesRoutes from './movies.oop.routes';
 
 const router = Router();
 // Agrupar todas las rutas bajo /api/v1 o la ruta que se especifique

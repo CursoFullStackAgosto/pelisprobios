@@ -1,3 +1,5 @@
+import { Movie } from "@prisma/client";
+
 export interface MovieDraft {
   Title: string;
   Year: string;
@@ -35,4 +37,8 @@ export interface MovieDetails {
   Production: string;
   Website: string;
   Response: string;
+}
+
+export interface MovieWithDetails extends Movie {
+  additionalDetails?: MovieDetails | null;
 }
