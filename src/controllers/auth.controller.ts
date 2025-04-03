@@ -10,7 +10,26 @@ const jwtSecret = process.env.JWT_SECRET as string;
 
 export const registerCtrl = async (request: Request, response: Response, next: NextFunction) => {
   const { username, email, password, age } = request.body;
-
+  const userEmailExists = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+  if (userEmailExists) {
+    return response.status(409).json({
+      message: "El correo electrónico ya está en uso",
+    });
+  }
+  const userUsernameExists = await prisma.user.findUnique({
+    where: {
+      username,
+    },
+  });
+  if (userUsernameExists) {
+    return response.status(409).json({
+      message: "El nombre de usuario ya está en uso",
+    });
+  }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
